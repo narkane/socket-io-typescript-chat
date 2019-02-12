@@ -1,23 +1,39 @@
-import { Component, OnInit, ViewChildren, ViewChild, AfterViewInit, QueryList, ElementRef } from '@angular/core';
-import { MatDialog, MatDialogRef, MatList, MatListItem } from '@angular/material';
+import {
+  Component,
+  OnInit,
+  ViewChildren,
+  ViewChild,
+  AfterViewInit,
+  QueryList,
+  ElementRef
+} from "@angular/core";
+import {
+  MatDialog,
+  MatDialogRef,
+  MatList,
+  MatListItem
+} from "@angular/material";
 
-import { Action } from './shared/model/action';
-import { Event } from './shared/model/event';
-import { Message } from './shared/model/message';
-import { User } from './shared/model/user';
-import { SocketService } from './shared/services/socket.service';
-import { DialogUserComponent } from './dialog-user/dialog-user.component';
-import { DialogUserType } from './dialog-user/dialog-user-type';
+import { Action } from "./shared/model/action";
+import { Event } from "./shared/model/event";
+import { Message } from "./shared/model/message";
+import { User } from "./shared/model/user";
+import { SocketService } from "./shared/services/socket.service";
+import { DialogUserComponent } from "./dialog-user/dialog-user.component";
+import { DialogUserType } from "./dialog-user/dialog-user-type";
 
+import TalkoClient from "../../../src/TalkoClient";
 
-const AVATAR_URL = 'https://api.adorable.io/avatars/285';
+const AVATAR_URL = "https://api.adorable.io/avatars/285";
 
 @Component({
-  selector: 'tcc-chat',
-  templateUrl: './chat.component.html',
-  styleUrls: ['./chat.component.css']
+  selector: "tcc-chat",
+  templateUrl: "./chat.component.html",
+  styleUrls: ["./chat.component.css"]
 })
 export class ChatComponent implements OnInit, AfterViewInit {
+  talkoKit = new TalkoClient();
+
   action = Action;
   user: User;
   messages: Message[] = [];
@@ -27,7 +43,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
   defaultDialogUserParams: any = {
     disableClose: true,
     data: {
-      title: 'Welcome',
+      title: "Welcome",
       dialogType: DialogUserType.NEW
     }
   };
@@ -36,10 +52,11 @@ export class ChatComponent implements OnInit, AfterViewInit {
   @ViewChild(MatList, { read: ElementRef }) matList: ElementRef;
 
   // getting a reference to the items/messages within the list
-  @ViewChildren(MatListItem, { read: ElementRef }) matListItems: QueryList<MatListItem>;
+  @ViewChildren(MatListItem, { read: ElementRef }) matListItems: QueryList<
+    MatListItem
+  >;
 
-  constructor(private socketService: SocketService,
-    public dialog: MatDialog) { }
+  constructor(private socketService: SocketService, public dialog: MatDialog) {}
 
   ngOnInit(): void {
     this.initModel();
@@ -61,8 +78,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
   private scrollToBottom(): void {
     try {
       this.matList.nativeElement.scrollTop = this.matList.nativeElement.scrollHeight;
-    } catch (err) {
-    }
+    } catch (err) {}
   }
 
   private initModel(): void {
@@ -74,34 +90,40 @@ export class ChatComponent implements OnInit, AfterViewInit {
   }
 
   private initIoConnection(): void {
-    this.socketService.initSocket();
+    // this.socketService.initSocket();
 
-    this.ioConnection = this.socketService.onMessage()
-      .subscribe((message: Message) => {
+    // this.ioConnection = this.socketService.onMessage()
+    //   .subscribe((message: Message) => {
+    //     this.messages.push(message);
+    //   });
+
+    // this.socketService.onEvent(Event.CONNECT)
+    //   .subscribe(() => {
+    //     console.log('connected');
+    //   });
+
+    // this.socketService.onEvent(Event.DISCONNECT)
+    //   .subscribe(() => {
+    //     console.log('disconnected');
+    //   });
+    this.talkoKit.start(
+      5050,
+      (message: Message) => {
         this.messages.push(message);
-      });
-
-
-    this.socketService.onEvent(Event.CONNECT)
-      .subscribe(() => {
-        console.log('connected');
-      });
-
-    this.socketService.onEvent(Event.DISCONNECT)
-      .subscribe(() => {
-        console.log('disconnected');
-      });
+      },
+      "test_NAME"
+    );
   }
 
   private getRandomId(): number {
-    return Math.floor(Math.random() * (1000000)) + 1;
+    return Math.floor(Math.random() * 1000000) + 1;
   }
 
   public onClickUserInfo() {
     this.openUserPopup({
       data: {
         username: this.user.name,
-        title: 'Edit Details',
+        title: "Edit Details",
         dialogType: DialogUserType.EDIT
       }
     });
@@ -129,11 +151,15 @@ export class ChatComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    this.socketService.send({
+    this.talkoKit.sendMessage({
       from: this.user,
       content: message
     });
-    this.messageContent = null;
+    // this.socketService.send({
+    //   from: this.user,
+    //   content: message
+    // });
+    // this.messageContent = null;
   }
 
   public sendNotification(params: any, action: Action): void {
@@ -143,7 +169,7 @@ export class ChatComponent implements OnInit, AfterViewInit {
       message = {
         from: this.user,
         action: action
-      }
+      };
     } else if (action === Action.RENAME) {
       message = {
         action: action,
